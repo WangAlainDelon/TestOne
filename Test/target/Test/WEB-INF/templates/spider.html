@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>主页</title>
+    <script src="../static/js/jQuery/jquery-2.1.4.min.js"></script>
+    <script src="../static/js/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="../static/js/bootstrap/css/bootstrap.min.css"/>
+    <script src="../static/js/bootstrap/js/bootstrap-paginator.min.js"></script>
+    <style type="text/css">
+        #queryDiv {
+            float: left;
+            margin-right: 200px;
+            margin-left: 270px;
+            width: 100%;
+            position: relative;
+        }
+
+        #queryDiv div {
+            float: left;
+            margin-right: 5px;
+        }
+
+        #queryDiv2 {
+            float: left;
+            margin-right: 200px;
+            margin-left: 200px;
+            width: 200px;
+            position: relative;
+        }
+
+        #textInput, #textInput2, #textInput3 {
+            margin-top: 10px;
+            width: 100px;
+
+        }
+
+        #textInput2, #textInput3 {
+            width: 2em;
+        }
+
+        #tableResult {
+            /*  margin-right: auto;
+              margin-left: auto;*/
+            margin: 0 auto;
+            margin-top: 20px;
+            width: 800px;
+        }
+
+        #tableResult2 {
+            /*  margin-right: auto;
+              margin-left: auto;*/
+            margin: 0 auto;
+            margin-top: 20px;
+            width: 800px;
+        }
+
+        #tableResult3 {
+            /*  margin-right: auto;
+              margin-left: auto;*/
+            margin: 0 auto;
+            margin-top: 20px;
+            width: 800px;
+        }
+
+        td {
+            width: 150px
+        }
+
+        .right {
+            margin-left: 161px;
+            font-size: 20px;
+        }
+
+    </style>
+
+    <!--<script type="text/javascript">
+        //渲染完就执行
+        $(function () {
+
+        });
+    </script>-->
+</head>
+<body>
+
+<div>
+    <div id="queryDiv">
+        <div><input id="textInput" type="text" placeholder="股票代码"/>
+            <button id="queryButton" class="btn btn-primary" type="button">历史</button>
+        </div>
+        <div class="right">
+            最近<input id="textInput2" name="day" type="text" placeholder="天"/>天，涨幅超过百分之
+            <input id="textInput3" name="chg" type="text" placeholder="涨幅"/>的次数
+            <button id="queryButton2" class="btn btn-primary" type="button">查询</button>
+        </div>
+    </div>
+
+</div>
+<div>
+
+</div>
+<form id="form1">
+    <table class="table table-bordered" id='tableResult'>
+        <caption>查询结果</caption>
+        <thead>
+        <tr>
+            <th>股票代码</th>
+            <th>股票名字</th>
+            <th>最新评级</th>
+            <th>目标价</th>
+            <th>平均涨幅</th>
+            <th>行业</th>
+            <th>最新价</th>
+            <th>涨跌幅</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+    </table>
+    <!-- 底部分页按钮 -->
+    <div id="bottomTab"></div>
+</form>
+
+<form id="form2">
+    <table class="table table-bordered" id='tableResult2'>
+        <caption>查询结果</caption>
+        <thead>
+        <tr>
+            <th>股票代码</th>
+            <th>股票名字</th>
+            <th>日期</th>
+            <th>开盘价</th>
+            <th>最高价</th>
+            <th>收盘价</th>
+            <th>最低价</th>
+            <th>交易量</th>
+            <th>交易金额(元)</th>
+            <th>升跌</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody2">
+        </tbody>
+    </table>
+    <!-- 底部分页按钮 -->
+    <div id="bottomTab2"></div>
+</form>
+<form id="form3">
+    <table class="table table-bordered" id='tableResult3'>
+        <caption>查询结果</caption>
+        <thead>
+        <tr>
+            <th>股票代码</th>
+            <th>股票名字</th>
+            <th>时间（近多少天）</th>
+            <th>涨幅超过（%）</th>
+            <th>次数</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody3">
+        </tbody>
+    </table>
+    <!-- 底部分页按钮 -->
+    <div id="bottomTab3"></div>
+</form>
+<script type='text/javascript'>
+    var PAGESIZE = 10;
+    var options = {
+        currentPage: 1,  //当前页数
+        totalPages: 10,  //总页数，这里只是暂时的，后头会根据查出来的条件进行更改
+        size: "normal",
+        alignment: "center",
+        itemTexts: function (type, page, current) {
+            switch (type) {
+                case "first":
+                    return "第一页";
+                case "prev":
+                    return "前一页";
+                case "next":
+                    return "后一页";
+                case "last":
+                    return "最后页";
+                case "page":
+                    return page;
+            }
+        },
+        onPageClicked: function (e, originalEvent, type, page) {
+            var stock_code = $("#textInput").val(); //取内容
+            buildTable(stock_code, page, PAGESIZE);//默认每页最多10条
+        }
+    }
+
+    //获取当前项目的路径
+    var urlRootContext = (function () {
+        var strPath = window.document.location.pathname;
+        var postPath = strPath.substring(0, strPath.substr(1).indexOf('/') + 1);
+        return postPath;
+    })();
+
+
+    //生成表格
+    function buildTable(code, pageNumber, pageSize) {
+
+        var url = urlRootContext + "/stock"; //请求的网址
+        var reqParams = {'code': code, 'pageNumber': pageNumber, 'pageSize': pageSize};//请求数据
+        $(function () {
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: reqParams,
+                async: false,
+                dataType: "json",
+                success: function (data) {
+                    if (data.isError == false) {
+                        // options.totalPages = data.pages;
+                        var newoptions = {
+                            currentPage: 1,  //当前页数
+                            totalPages: data.pages == 0 ? 1 : data.pages,  //总页数
+                            size: "normal",
+                            alignment: "center",
+                            itemTexts: function (type, page, current) {
+                                switch (type) {
+                                    case "first":
+                                        return "第一页";
+                                    case "prev":
+                                        return "前一页";
+                                    case "next":
+                                        return "后一页";
+                                    case "last":
+                                        return "最后页";
+                                    case "page":
+                                        return page;
+                                }
+                            },
+                            onPageClicked: function (e, originalEvent, type, page) {
+                                var code = $("#textInput").val(); //取内容
+                                buildTable(code, page, PAGESIZE);//默认每页最多10条
+                            }
+                        }
+                        $('#bottomTab').bootstrapPaginator("setOptions", newoptions); //重新设置总页面数目
+                        var dataList = data.dataList;
+                        $("#tableBody").empty();//清空表格内容
+                        if (dataList.length > 0) {
+                            $(dataList).each(function () {//重新生成
+                                $("#tableBody").append('<tr>');
+                                $("#tableBody").append('<td>' + this.stock_code + '</td>');
+                                $("#tableBody").append('<td>' + this.stock_name + '</td>');
+                                $("#tableBody").append('<td>' + this.latest_ratings + '</td>');
+                                $("#tableBody").append('<td>' + this.target_price + '</td>');
+                                $("#tableBody").append('<td>' + this.average_increase + '</td>');
+                                $("#tableBody").append('<td>' + this.industry + '</td>');
+                                $("#tableBody").append('<td>' + this.latest_rice + '</td>');
+                                $("#tableBody").append('<td>' + this.chg + '</td>');
+                                $("#tableBody").append('</tr>');
+                            });
+                        } else {
+                            $("#tableBody").append('<tr><th colspan ="4"><center>查询无数据</center></th></tr>');
+                        }
+                    } else {
+                        alert(data.errorMsg);
+                    }
+                },
+                error: function (e) {
+                    alert("查询失败:" + e);
+                }
+            });
+        });
+    }
+
+    //生成表格
+    function buildTable2(code, pageNumber, pageSize) {
+        $("#form1").hide();
+        $("#form3").hide();
+        $("#form2").show();
+        var url = urlRootContext + "/history"; //请求的网址
+        var reqParams = {'code': code, 'pageNumber': pageNumber, 'pageSize': pageSize};//请求数据
+        $(function () {
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: reqParams,
+                async: false,
+                dataType: "json",
+                success: function (data) {
+                    if (data.isError == false) {
+                        // options.totalPages = data.pages;
+                        var newoptions = {
+                            currentPage: 1,  //当前页数
+                            totalPages: data.pages == 0 ? 1 : data.pages,  //总页数
+                            size: "normal",
+                            alignment: "center",
+                            itemTexts: function (type, page, current) {
+                                switch (type) {
+                                    case "first":
+                                        return "第一页";
+                                    case "prev":
+                                        return "前一页";
+                                    case "next":
+                                        return "后一页";
+                                    case "last":
+                                        return "最后页";
+                                    case "page":
+                                        return page;
+                                }
+                            },
+                            onPageClicked: function (e, originalEvent, type, page) {
+                                var code = $("#textInput").val(); //取内容
+                                buildTable2(code, page, PAGESIZE);//默认每页最多10条
+                            }
+                        }
+                        $('#bottomTab2').bootstrapPaginator("setOptions", newoptions); //重新设置总页面数目
+                        var dataList = data.dataList;
+                        $("#tableBody2").empty();//清空表格内容
+                        if (dataList.length > 0) {
+                            $(dataList).each(function () {//重新生成
+                                $("#tableBody2").append('<tr>');
+                                $("#tableBody2").append('<td>' + this.stock_code + '</td>');
+                                $("#tableBody2").append('<td>' + this.stock_name + '</td>');
+                                $("#tableBody2").append('<td>' + this.date + '</td>');
+                                $("#tableBody2").append('<td>' + this.opening_price + '</td>');
+                                $("#tableBody2").append('<td>' + this.maximum_price + '</td>');
+                                $("#tableBody2").append('<td>' + this.closing_rice + '</td>');
+                                $("#tableBody2").append('<td>' + this.minimum_price + '</td>');
+                                $("#tableBody2").append('<td>' + this.volume + '</td>');
+                                $("#tableBody2").append('<td>' + this.amount + '</td>');
+                                $("#tableBody2").append('<td>' + this.rise_and_fall + '</td>');
+                                $("#tableBody2").append('</tr>');
+                            });
+                        } else {
+                            $("#tableBody2").append('<tr><th colspan ="4"><center>查询无数据</center></th></tr>');
+                        }
+                    } else {
+                        alert(data.errorMsg);
+                    }
+                },
+                error: function (e) {
+                    alert("查询失败:" + e);
+                }
+            });
+        });
+    }
+
+    //条件数据表格
+    function buildTable3(code,day, chg, pageNumber, pageSize) {
+        $("#form1").hide();
+        $("#form2").hide();
+        $("#form3").show();
+        var url = urlRootContext + "/search"; //请求的网址
+        var reqParams = {'code':code,'day': day, 'chg': chg};//请求数据
+        $(function () {
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: reqParams,
+                async: false,
+                dataType: "json",
+                success: function (data) {
+                    if (data.isError == false) {
+                        // options.totalPages = data.pages;
+                        var newoptions = {
+                            currentPage: 1,  //当前页数
+                            totalPages: data.pages == 0 ? 1 : data.pages,  //总页数
+                            size: "normal",
+                            alignment: "center",
+                            itemTexts: function (type, page, current) {
+                                switch (type) {
+                                    case "first":
+                                        return "第一页";
+                                    case "prev":
+                                        return "前一页";
+                                    case "next":
+                                        return "后一页";
+                                    case "last":
+                                        return "最后页";
+                                    case "page":
+                                        return page;
+                                }
+                            },
+                            onPageClicked: function (e, originalEvent, type, page) {
+                                var day = $("#textInput2").val(); //取内容
+                                var chg = $("#textInput3").val();
+                                buildTable3(day, chg, page, PAGESIZE);//默认每页最多10条
+                            }
+                        }
+                        $('#bottomTab3').bootstrapPaginator("setOptions", newoptions); //重新设置总页面数目
+                        var dataList = data.dataList;
+                        $("#tableBody3").empty();//清空表格内容
+                        if (dataList.length > 0) {
+                            $(dataList).each(function () {//重新生成
+                                $("#tableBody3").append('<tr>');
+                                $("#tableBody3").append('<td>' + this.stock_code + '</td>');
+                                $("#tableBody3").append('<td>' + this.stock_name + '</td>');
+                                $("#tableBody3").append('<td>' + this.day + '</td>');
+                                $("#tableBody3").append('<td>' + this.chg + '</td>');
+                                $("#tableBody3").append('<td>' + this.times + '</td>');
+                                $("#tableBody3").append('</tr>');
+                            });
+                        } else {
+                            $("#tableBody3").append('<tr><th colspan ="4"><center>查询无数据</center></th></tr>');
+                        }
+                    } else {
+                        alert(data.errorMsg);
+                    }
+                },
+                error: function (e) {
+                    alert("查询失败:" + e);
+                }
+            });
+        });
+    }
+
+    //渲染完就执行
+    $(function () {
+        $("#form2").hide();
+        $("#form3").hide();
+        //生成底部分页栏
+        $('#bottomTab').bootstrapPaginator(options);
+        //加载股票的最新信息
+        buildTable("", 1, 10);
+
+        //输入代码，查询股票的历史信息
+        $("#queryButton").bind("click", function () {
+            var code = $("#textInput").val();
+            //生成底部分页栏
+            $('#bottomTab2').bootstrapPaginator(options);
+            buildTable2(code, 1, PAGESIZE);
+        });
+
+        //条件查询
+        $("#queryButton2").bind("click", function () {
+            var code = $("#textInput").val();
+            var day = $("#textInput2").val();
+            var chg = $("#textInput3").val();
+            //生成底部分页栏
+            $('#bottomTab3').bootstrapPaginator(options);
+            buildTable3(code,day, chg, 1, PAGESIZE);
+        });
+
+
+    });
+</script>
+</body>
+</html>

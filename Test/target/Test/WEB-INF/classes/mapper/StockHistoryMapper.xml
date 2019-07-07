@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 设置为IUserDao接口方法提供sql语句配置 -->
+<mapper namespace="com.test.mapper.HttpStockHistoryMapper">
+    <!--设置domain类和数据库中表的字段一一对应，注意数据库字段和domain类中的字段名称不致，此处一定要！ -->
+    <resultMap id="BaseResultMap" type="com.test.domain.StockHistory">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="stock_code" property="stock_code" jdbcType="CHAR"/>
+        <result column="stock_name" property="stock_name" jdbcType="VARCHAR"/>
+        <result column="date" property="date" jdbcType="DATE"/>
+        <result column="opening_price" property="opening_price" jdbcType="VARCHAR"/>
+        <result column="maximum_price" property="maximum_price" jdbcType="VARCHAR"/>
+        <result column="closing_rice" property="closing_rice" jdbcType="VARCHAR"/>
+        <result column="minimum_price" property="minimum_price" jdbcType="VARCHAR"/>
+        <result column="volume" property="volume" jdbcType="VARCHAR"/>
+        <result column="amount" property="amount" jdbcType="VARCHAR"/>
+        <result column="stock_id" property="stock_id" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--    <insert id="saveStock" parameterType="com.test.domain.Stock">
+            insert into stock(stock_code,stock_name,latest_ratings,target_price,average_increase,industry,latest_rice,chg)
+             values(#{stock_code},#{stock_name},#{latest_ratings},#{target_price},#{average_increase},#{industry},#{latest_rice},#{chg})
+        </insert>
+        <insert id="saveStockHistory" parameterType="com.test.domain.StockHistory">
+            insert into stock_histoy(stock_code,stock_name,date,opening_price,maximum_price,closing_rice,minimum_price,volume,amount)
+             values(#{stock_code},#{stock_name},#{date},#{opening_price},#{maximum_price},#{closing_rice},#{minimum_price},#{volume},#{amount})
+        </insert>-->
+
+    <select id="selectByCode" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT *
+        FROM stockhistory
+        WHERE 1 = 1
+        <if test="code != null and code !=''">
+            AND stock_code = #{code,jdbcType=CHAR }
+        </if>
+        /* ORDER BY USER_ID*/
+    </select>
+
+    <select id="queryByCondition" resultType="java.lang.Integer">
+     SELECT count(*) as times FROM (SELECT *
+     from stockhistory
+     WHERE stock_code=#{0}
+     ORDER BY date DESC LIMIT #{1}) a WHERE a.rise_and_fall > #{2}
+    </select>
+</mapper>
