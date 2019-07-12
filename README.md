@@ -27,7 +27,7 @@ Spring+SpringMVC+Mybatis+Maven+WebMagic
 框架：Bootstarp+Html  
 **5. 数据源配置**  
 数据库配置修改  
-请修改Test\src\main\resources\jdbc.properties和com.test.utils.DBHelper中的内容，将jdbc_url、jdbc_username、jdbc_password修改成自己的，示例如下：     
+请修改Test\src\main\resources\jdbc.properties和com.test.utils.DBHelper中的内容，因为同时也用到了JDBC导入数据，将jdbc_url、jdbc_username、jdbc_password修改成自己的，示例如下：     
 `<jdbc_driverClassName>com.mysql.jdbc.Driver</jdbc_driverClassName>`      
 `<jdbc_url>jdbc:mysql://localhost:3306/learning</jdbc_url>`  
 `<jdbc_username>root</jdbc_username>`  
